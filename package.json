@@ -31,3 +31,6 @@
     "vite": "^5.4.11"
   }
 }
+    "devDependencies": {
+     "terser": "^5.30.0"
+  }
