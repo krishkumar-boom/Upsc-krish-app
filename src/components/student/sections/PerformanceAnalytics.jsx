@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import Card from '../../common/Card';
 import ProgressBar from '../../common/ProgressBar';
-import ChartWrapper from '../../common/ChartWrapper';
+import { LineChart } from '../../common/ChartWrapper';
 import EmptyState from '../../common/EmptyState';
 
 const PerformanceAnalytics = ({ results, questions }) => {
@@ -100,216 +100,57 @@ const PerformanceAnalytics = ({ results, questions }) => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Overview Cards */}
+
+      {/* Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Tests', value: results.length, color: 'text-blue-600' },
-          { label: 'Avg Score', value: `${overallStats.avgScore}%`, color: 'text-emerald-600' },
-          { label: 'Best', value: `${Math.round(overallStats.bestScore)}%`, color: 'text-yellow-600' },
-          { label: 'Worst', value: `${Math.round(overallStats.worstScore)}%`, color: 'text-red-600' },
-          { label: 'Accuracy', value: `${overallStats.totalQ > 0 ? Math.round((overallStats.totalCorrect / overallStats.totalQ) * 100) : 0}%`, color: 'text-purple-600' },
-          { label: 'Time', value: `${Math.round(overallStats.totalTime / 60)}m`, color: 'text-teal-600' }
-        ].map((stat, idx) => (
-          <Card key={idx} className="text-center">
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stat.label}</p>
+          { label: 'Tests', value: results.length },
+          { label: 'Avg', value: `${overallStats.avgScore}%` },
+          { label: 'Best', value: `${overallStats.bestScore}%` },
+          { label: 'Worst', value: `${overallStats.worstScore}%` },
+          { label: 'Accuracy', value: `${Math.round((overallStats.totalCorrect / overallStats.totalQ) * 100)}%` },
+          { label: 'Time', value: `${Math.round(overallStats.totalTime / 60)}m` }
+        ].map((stat, i) => (
+          <Card key={i} className="text-center">
+            <p className="text-xl font-bold">{stat.value}</p>
+            <p className="text-xs text-gray-500">{stat.label}</p>
           </Card>
         ))}
       </div>
 
-      {/* Score Over Time */}
+      {/* Chart */}
       <Card>
-        <h3 className="font-semibold text-gray-800 dark:text-white mb-4">📈 Score Trend</h3>
+        <h3 className="mb-4 font-semibold">Score Trend</h3>
         {scoreOverTime.length > 1 ? (
-          <ChartWrapper data={scoreOverTime} type="line" height={200} color="#3b82f6" />
+          <LineChart
+            labels={scoreOverTime.map(i => i.label)}
+            datasets={[{
+              label: 'Score %',
+              data: scoreOverTime.map(i => i.value),
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59,130,246,0.2)',
+              fill: true,
+              tension: 0.4
+            }]}
+            height={200}
+          />
         ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
-            Need at least 2 tests to show trend
-          </p>
+          <p className="text-center text-sm">Not enough data</p>
         )}
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Score Distribution */}
-        <Card>
-          <h3 className="font-semibold text-gray-800 dark:text-white mb-4">📊 Score Distribution</h3>
-          <div className="space-y-3">
-            {Object.entries(scoreDistribution).map(([range, count]) => (
-              <div key={range} className="flex items-center gap-3">
-                <span className="text-sm text-gray-600 dark:text-gray-400 w-16">{range}%</span>
-                <div className="flex-1 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                  <div
-                    className={`h-full rounded-lg transition-all duration-500 flex items-center justify-end pr-2 ${
-                      range === '81-100' ? 'bg-emerald-500' :
-                      range === '61-80' ? 'bg-blue-500' :
-                      range === '41-60' ? 'bg-yellow-500' :
-                      range === '21-40' ? 'bg-orange-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${(count / maxDist) * 100}%`, minWidth: count > 0 ? '24px' : '0' }}
-                  >
-                    {count > 0 && <span className="text-white text-xs font-bold">{count}</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Difficulty Breakdown */}
-        <Card>
-          <h3 className="font-semibold text-gray-800 dark:text-white mb-4">🎯 By Difficulty</h3>
-          <div className="space-y-4">
-            {difficultyAnalysis.map(d => (
-              <div key={d.level}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${
-                      d.level === 'easy' ? 'bg-emerald-500' :
-                      d.level === 'medium' ? 'bg-yellow-500' : 'bg-red-500'
-                    }`} />
-                    {d.level}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {d.correct}/{d.total} ({d.accuracy}%)
-                  </span>
-                </div>
-                <ProgressBar
-                  value={d.accuracy}
-                  max={100}
-                  color={d.level === 'easy' ? 'emerald' : d.level === 'medium' ? 'yellow' : 'red'}
-                  size="md"
-                />
-              </div>
-            ))}
-            {difficultyAnalysis.every(d => d.total === 0) && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                No difficulty data available
-              </p>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {/* Subject Analysis */}
+      {/* Distribution */}
       <Card>
-        <h3 className="font-semibold text-gray-800 dark:text-white mb-4">📚 Subject Performance</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Subject</th>
-                <th className="text-center py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Tests</th>
-                <th className="text-center py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Avg Score</th>
-                <th className="text-center py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Accuracy</th>
-                <th className="text-center py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Avg Time/Q</th>
-                <th className="text-center py-3 px-2 text-gray-600 dark:text-gray-400 font-medium">Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjectAnalysis.map(subject => (
-                <tr key={subject.name} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="py-3 px-2 font-medium text-gray-800 dark:text-white">{subject.name}</td>
-                  <td className="py-3 px-2 text-center text-gray-600 dark:text-gray-400">{subject.tests}</td>
-                  <td className="py-3 px-2 text-center">
-                    <span className={`font-bold ${
-                      subject.avgScore >= 80 ? 'text-emerald-600' :
-                      subject.avgScore >= 60 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                      {subject.avgScore}%
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 text-center text-gray-600 dark:text-gray-400">
-                    {subject.accuracy}%
-                  </td>
-                  <td className="py-3 px-2 text-center text-gray-600 dark:text-gray-400">
-                    {subject.avgTime}s
-                  </td>
-                  <td className="py-3 px-2 text-center">
-                    {subject.trend > 0 ? (
-                      <span className="text-emerald-600">↑ {Math.round(subject.trend)}%</span>
-                    ) : subject.trend < 0 ? (
-                      <span className="text-red-600">↓ {Math.abs(Math.round(subject.trend))}%</span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h3 className="mb-4 font-semibold">Score Distribution</h3>
+        {Object.entries(scoreDistribution).map(([r, c]) => (
+          <div key={r} className="mb-2">
+            {r}% → {c}
+          </div>
+        ))}
       </Card>
 
-      {/* Insights */}
-      <Card>
-        <h3 className="font-semibold text-gray-800 dark:text-white mb-4">💡 Insights</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {generateInsights(overallStats, subjectAnalysis, difficultyAnalysis, results).map((insight, idx) => (
-            <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <span className="text-2xl">{insight.icon}</span>
-              <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-white">{insight.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{insight.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
-};
-
-const generateInsights = (stats, subjects, difficulties, results) => {
-  const insights = [];
-
-  // Best subject
-  const bestSubject = subjects.reduce((best, s) => s.avgScore > (best?.avgScore || 0) ? s : best, null);
-  if (bestSubject) {
-    insights.push({
-      icon: '🌟',
-      title: `Strongest: ${bestSubject.name}`,
-      text: `Average score of ${bestSubject.avgScore}% across ${bestSubject.tests} tests`
-    });
-  }
-
-  // Weakest subject
-  const worstSubject = subjects.reduce((worst, s) => s.avgScore < (worst?.avgScore || 100) ? s : worst, null);
-  if (worstSubject && worstSubject.name !== bestSubject?.name) {
-    insights.push({
-      icon: '📖',
-      title: `Focus on: ${worstSubject.name}`,
-      text: `Average score of ${worstSubject.avgScore}%. Practice more to improve!`
-    });
-  }
-
-  // Speed insight
-  const avgTimePerQ = stats.totalQ > 0 ? Math.round(stats.totalTime / stats.totalQ) : 0;
-  if (avgTimePerQ > 0) {
-    insights.push({
-      icon: '⏱️',
-      title: `${avgTimePerQ}s per question`,
-      text: avgTimePerQ > 90 ? 'Take your time but try to be slightly faster' :
-            avgTimePerQ > 60 ? 'Good pace! Well balanced' :
-            'Quick responses! Make sure accuracy stays high'
-    });
-  }
-
-  // Consistency
-  if (results.length >= 5) {
-    const scores = results.map(r => r.percentage || 0);
-    const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
-    const variance = scores.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / scores.length;
-    const stdDev = Math.round(Math.sqrt(variance));
-    insights.push({
-      icon: stdDev < 15 ? '🎯' : '📉',
-      title: stdDev < 15 ? 'Very Consistent!' : 'Scores Vary',
-      text: stdDev < 15
-        ? `Your scores are steady with only ±${stdDev}% variation`
-        : `Your scores vary by ±${stdDev}%. Try to be more consistent.`
-    });
-  }
-
-  return insights.slice(0, 4);
 };
 
 export default PerformanceAnalytics;
