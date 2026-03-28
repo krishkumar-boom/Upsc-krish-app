@@ -79,3 +79,4 @@ export function DoughnutChart({ labels, data, colors, height = 300 }) {
     </div>
   )
 }
+export default ChartWrapper;
