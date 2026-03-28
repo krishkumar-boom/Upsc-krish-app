@@ -10,7 +10,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
+    minify: 'terser', // ✅ terser use hoga (ab install bhi hai)
     rollupOptions: {
       output: {
         manualChunks: {
@@ -22,6 +22,3 @@ export default defineConfig({
     }
   }
 })
-build: {
-  minify: false
-}
